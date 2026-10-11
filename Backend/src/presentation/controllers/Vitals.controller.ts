@@ -1,18 +1,19 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { VitalsApplicationService } from '../../application/vitals/VitalsApplicationService';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { UserModel } from '../../infrastructure/database/schemas/User.schema';
+import { notificationService } from '../../infrastructure/notifications/socket';
+import { AppError } from '../../domain/errors/AppError';
 
 export class VitalsController {
   constructor(private readonly vitalsService: VitalsApplicationService) {}
 
-  public recordVitals = async (req: Request, res: Response): Promise<void> => {
+  public recordVitals = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as AuthenticatedRequest).user?.userId;
       const user = userId ? await UserModel.findById(userId) : null;
-      if (!user || user.role !== 'doctor') {
-        res.status(403).json({ success: false, message: 'Only doctors can record vitals' });
-        return;
+      if (!user || !['admin', 'doctor', 'nurse'].includes(user.role)) {
+        throw new AppError(403, 'Only Doctor, Nurse, or Admin can record vitals');
       }
 
       const {
@@ -39,36 +40,47 @@ export class VitalsController {
         wbcCount: Number(wbcCount),
       });
 
+      // Emit real-time critical vitals event to doctor and admin rooms if status is critical
+      if (analysisResult.status === 'critical') {
+        notificationService.emitCriticalVitals({
+          patientId,
+          status: analysisResult.status,
+          flaggedParams: analysisResult.flaggedParams,
+          message: analysisResult.message,
+          summary: analysisResult.message,
+          analysis: analysisResult,
+          recordedAt: new Date(),
+        });
+      }
+
       res.status(201).json({
         success: true,
         message: 'Vitals recorded and analyzed successfully',
         analysis: analysisResult,
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to record vitals',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getVitalsByPatient = async (req: Request, res: Response): Promise<void> => {
+  public getVitalsByPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const patientId = String(req.params.patientId);
+      let patientId = String(req.params.patientId);
       const userId = (req as AuthenticatedRequest).user?.userId;
       const user = userId ? await UserModel.findById(userId) : null;
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
 
-      if (user.role === 'patient' && user.linkedId !== patientId) {
-        res.status(403).json({ success: false, message: 'You can only view your own vitals' });
-        return;
+      if (user.role === 'patient') {
+        if (!user.linkedId || (patientId && user.linkedId !== patientId)) {
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
+        }
+        patientId = user.linkedId;
+        req.params.patientId = user.linkedId;
       }
-      if (!['patient', 'doctor', 'admin'].includes(user.role)) {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+      if (!['patient', 'doctor', 'nurse', 'admin'].includes(user.role)) {
+        throw new AppError(403, 'Forbidden');
       }
 
       const vitalsList = await this.vitalsService.getVitalsByPatient(patientId);
@@ -92,11 +104,8 @@ export class VitalsController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch patient vitals',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }

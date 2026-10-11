@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { createHash, randomInt } from 'crypto';
 import { UserModel } from '../../infrastructure/database/schemas/User.schema';
@@ -11,49 +11,30 @@ import { TokenBlacklistService } from '../../infrastructure/auth/TokenBlacklistS
 import { RegisterDTO, LoginDTO } from '../../application/auth';
 import { EmailService } from '../../infrastructure/notifications/EmailService';
 import { env } from '../../infrastructure/config/env';
+import { AppError } from '../../domain/errors/AppError';
 
 export class AuthController {
-  public register = async (req: Request, res: Response): Promise<void> => {
+  public register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { username, email, password }: RegisterDTO = req.body;
 
       if (!username || !email || !password) {
-        res.status(400).json({
-          success: false,
-          message: 'Username, email, and password are required',
-        });
-        return;
+        throw new AppError(400, 'Username, email, and password are required');
       }
 
       // --- Check username uniqueness ---
       const userByUsername = await UserModel.findOne({ username: username.trim() });
       if (userByUsername) {
-        res.status(400).json({
-          success: false,
-          message: 'Username is already taken',
-        });
-        return;
+        throw new AppError(409, 'Username is already taken');
       }
 
       // --- Check email uniqueness ---
       const userByEmail = await UserModel.findOne({ email: email.toLowerCase().trim() });
       if (userByEmail) {
-        res.status(400).json({
-          success: false,
-          message: 'An account already exists with this email',
-        });
-        return;
+        throw new AppError(409, 'An account already exists with this email');
       }
 
       // --- Check password uniqueness ---
-      // NOTE: bcrypt generates a unique salt per hash, so two users with the
-      // same plaintext password will produce different stored hashes. The
-      // MongoDB unique index on the password field only guards against exact
-      // hash collisions (effectively impossible). To detect duplicate
-      // plaintext passwords we must compare against every stored hash, which
-      // is O(n) and will slow down registrations as the user base grows.
-      // Consider removing this check or enforcing it only in high-security
-      // contexts (e.g. admin accounts).
       const allUsers = await UserModel.find({}, { password: 1 });
       for (const existingUser of allUsers) {
         const isSamePassword = await PasswordHasher.comparePassword(
@@ -61,11 +42,7 @@ export class AuthController {
           existingUser.password
         );
         if (isSamePassword) {
-          res.status(400).json({
-            success: false,
-            message: 'This password is already in use. Please choose a different password.',
-          });
-          return;
+          throw new AppError(400, 'This password is already in use. Please choose a different password.');
         }
       }
 
@@ -90,24 +67,17 @@ export class AuthController {
           role: newUser.role,
         },
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error registering user',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public login = async (req: Request, res: Response): Promise<void> => {
+  public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { username, email, password }: LoginDTO = req.body;
 
       if ((!username && !email) || !password) {
-        res.status(400).json({
-          success: false,
-          message: 'Username or email, and password are required',
-        });
-        return;
+        throw new AppError(400, 'Username or email, and password are required');
       }
 
       // Find user by either username or email
@@ -121,15 +91,13 @@ export class AuthController {
 
       const user = await UserModel.findOne({ $or: queryConditions });
       if (!user) {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
-        return;
+        throw new AppError(401, 'Invalid credentials');
       }
 
       // Compare password
       const isPasswordValid = await PasswordHasher.comparePassword(password, user.password);
       if (!isPasswordValid) {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
-        return;
+        throw new AppError(401, 'Invalid credentials');
       }
 
       // Resolve linked profile ID
@@ -170,15 +138,12 @@ export class AuthController {
           ...(user.role === 'doctor' && linkedId ? { doctorId: linkedId } : {}),
         },
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error logging in',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public logout = async (req: Request, res: Response): Promise<void> => {
+  public logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const token =
         req.cookies?.token ||
@@ -211,20 +176,16 @@ export class AuthController {
         success: true,
         message: 'Logged out successfully',
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error logging out',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  public forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const email = typeof req.body.email === 'string' ? req.body.email.toLowerCase().trim() : '';
       if (!email) {
-        res.status(400).json({ success: false, message: 'Email is required' });
-        return;
+        throw new AppError(400, 'Email is required');
       }
 
       const user = await UserModel.findOne({ email });
@@ -255,21 +216,17 @@ export class AuthController {
         success: true,
         message: 'If an account exists for that email, a reset code has been sent.',
       });
-    } catch (error: unknown) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to send password reset code',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public verifyResetOtp = async (req: Request, res: Response): Promise<void> => {
+  public verifyResetOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const email = typeof req.body.email === 'string' ? req.body.email.toLowerCase().trim() : '';
       const otp = typeof req.body.otp === 'string' ? req.body.otp.trim() : '';
       if (!email || !/^\d{6}$/.test(otp)) {
-        res.status(400).json({ success: false, message: 'A valid email and 6-digit OTP are required' });
-        return;
+        throw new AppError(400, 'A valid email and 6-digit OTP are required');
       }
 
       const otpHash = createHash('sha256').update(otp).digest('hex');
@@ -279,30 +236,22 @@ export class AuthController {
         expiresAt: { $gt: new Date() },
       });
       if (!resetOtp) {
-        res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-        return;
+        throw new AppError(400, 'Invalid or expired OTP');
       }
 
       res.status(200).json({ success: true, message: 'OTP verified successfully' });
-    } catch (error: unknown) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to verify OTP',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public resetPassword = async (req: Request, res: Response): Promise<void> => {
+  public resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const email = typeof req.body.email === 'string' ? req.body.email.toLowerCase().trim() : '';
       const otp = typeof req.body.otp === 'string' ? req.body.otp.trim() : '';
       const newPassword = typeof req.body.newPassword === 'string' ? req.body.newPassword : '';
       if (!email || !/^\d{6}$/.test(otp) || newPassword.length < 6) {
-        res.status(400).json({
-          success: false,
-          message: 'A valid email, 6-digit OTP, and password of at least 6 characters are required',
-        });
-        return;
+        throw new AppError(400, 'A valid email, 6-digit OTP, and password of at least 6 characters are required');
       }
 
       const otpHash = createHash('sha256').update(otp).digest('hex');
@@ -312,24 +261,19 @@ export class AuthController {
         expiresAt: { $gt: new Date() },
       });
       if (!resetOtp) {
-        res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-        return;
+        throw new AppError(400, 'Invalid or expired OTP');
       }
 
       const hashedPassword = await PasswordHasher.hashPassword(newPassword);
       const user = await UserModel.findOneAndUpdate({ email }, { password: hashedPassword });
       if (!user) {
-        res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-        return;
+        throw new AppError(400, 'Invalid or expired OTP');
       }
 
       await PasswordResetOtpModel.deleteOne({ _id: resetOtp._id });
       res.status(200).json({ success: true, message: 'Password reset successfully' });
-    } catch (error: unknown) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to reset password',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }

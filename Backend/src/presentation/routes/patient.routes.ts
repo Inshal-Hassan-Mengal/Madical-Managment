@@ -3,6 +3,9 @@ import { PatientRepository } from '../../infrastructure/database/repositories/Pa
 import { PatientApplicationService } from '../../application/patient/PatientApplicationService';
 import { PatientController } from '../controllers/Patient.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { requireRole, requirePatientSelfOrRole } from '../middlewares/role.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { createPatientSchema } from '../schemas';
 
 const patientRouter = Router();
 
@@ -15,9 +18,21 @@ const patientService = new PatientApplicationService(patientRepository);
 const patientController = new PatientController(patientService);
 
 // Route definitions
-patientRouter.post('/', patientController.createPatient);
-patientRouter.get('/me', patientController.getMyPatient);
-patientRouter.get('/:patientId', patientController.getPatient);
-patientRouter.get('/', patientController.getAllPatients);
+// Admin, Doctor, Nurse can create patients
+patientRouter.post('/', requireRole('admin', 'doctor', 'nurse'), validate(createPatientSchema), patientController.createPatient);
+
+// Patients can view their own profile via /me
+patientRouter.get('/me', requireRole('patient'), patientController.getMyPatient);
+
+// Patient details: Staff can view; Patients can only view their own record
+patientRouter.get(
+  '/:patientId',
+  requireRole('admin', 'doctor', 'nurse', 'patient'),
+  requirePatientSelfOrRole('patientId', 'doctor', 'nurse'),
+  patientController.getPatient
+);
+
+// Staff only can view the complete patient roster
+patientRouter.get('/', requireRole('admin', 'doctor', 'nurse'), patientController.getAllPatients);
 
 export default patientRouter;

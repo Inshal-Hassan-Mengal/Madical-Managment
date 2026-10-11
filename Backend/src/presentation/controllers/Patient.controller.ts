@@ -1,12 +1,13 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { PatientApplicationService } from '../../application/patient/PatientApplicationService';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { UserModel } from '../../infrastructure/database/schemas/User.schema';
+import { AppError } from '../../domain/errors/AppError';
 
 export class PatientController {
   constructor(private readonly patientService: PatientApplicationService) {}
 
-  public createPatient = async (req: Request, res: Response): Promise<void> => {
+  public createPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { firstName, lastName, email, phone, dateOfBirth } = req.body;
 
@@ -28,29 +29,21 @@ export class PatientController {
         message: 'Patient created successfully',
         patientId,
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to create patient',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getMyPatient = async (req: Request, res: Response): Promise<void> => {
+  public getMyPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as AuthenticatedRequest).user?.userId;
       const user = userId ? await UserModel.findById(userId) : null;
 
       if (!user || user.role !== 'patient') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
       if (!user.linkedId) {
-        res.status(404).json({
-          success: false,
-          message: 'No patient profile is linked to your account.',
-        });
-        return;
+        throw new AppError(404, 'No patient profile is linked to your account.');
       }
 
       const patient = await this.patientService.getPatient(user.linkedId);
@@ -66,18 +59,31 @@ export class PatientController {
           dateOfBirth: patient.dateOfBirth,
         },
       });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to retrieve patient profile';
-      res.status(message === 'Patient not found' ? 404 : 500).json({
-        success: false,
-        message,
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getPatient = async (req: Request, res: Response): Promise<void> => {
+  public getPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const patientId = String(req.params.patientId);
+      const user = (req as AuthenticatedRequest).user;
+      let patientId = String(req.params.patientId);
+
+      if (user?.role === 'patient') {
+        let patientLinkedId = user.linkedId;
+        if (!patientLinkedId && user.userId) {
+          const u = await UserModel.findById(user.userId);
+          patientLinkedId = u?.linkedId;
+        }
+        if (!patientLinkedId || (patientId && patientId !== patientLinkedId)) {
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
+        }
+        if (patientLinkedId) {
+          patientId = patientLinkedId;
+          req.params.patientId = patientLinkedId;
+        }
+      }
+
       const patient = await this.patientService.getPatient(patientId);
 
       res.status(200).json({
@@ -92,15 +98,12 @@ export class PatientController {
           dateOfBirth: patient.dateOfBirth,
         },
       });
-    } catch (error: any) {
-      res.status(404).json({
-        success: false,
-        message: error.message || 'Patient not found',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAllPatients = async (req: Request, res: Response): Promise<void> => {
+  public getAllPatients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const patients = await this.patientService.getAllPatients();
 
@@ -118,11 +121,8 @@ export class PatientController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to retrieve patients',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }

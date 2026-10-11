@@ -33,3 +33,21 @@ redisClient.on('ready', () => {
 redisClient.on('error', (err) => {
   console.warn('⚠️ [Redis Warning]:', err.message || err);
 });
+
+/**
+ * Explicitly ping Redis at startup to surface connection failures early.
+ * Uses a non-fatal approach: a failure is logged as a warning, not a thrown
+ * error, so the server can still start and serve requests that don't need Redis.
+ */
+export const connectRedis = async (): Promise<void> => {
+  try {
+    await redisClient.ping();
+    console.log('✅ [Redis] Connection verified via PING.');
+  } catch (err: any) {
+    console.warn(
+      '⚠️ [Redis] Could not reach Redis at startup:',
+      err.message || err,
+      '\n   Token blacklisting and caching will be degraded until Redis is available.',
+    );
+  }
+};

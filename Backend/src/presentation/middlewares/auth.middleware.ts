@@ -42,3 +42,5 @@ export const authMiddleware = async (
     res.status(500).json({ success: false, message: 'Authentication error' });
   }
 };
+
+export { requireRole, requirePatientSelfOrRole } from './role.middleware';

@@ -1,3 +1,5 @@
+import { AppError } from '../errors/AppError';
+
 export interface MedicineItem {
   description: string;
   amount: number;
@@ -28,16 +30,16 @@ export class Medicine {
 
   public static create(dto: { name: string; quantity: number; unitPrice: number; expiryDate: Date }): Medicine {
     if (!dto.name || dto.name.trim().length === 0) {
-      throw new Error('Medicine name is required');
+      throw new AppError(400, 'Medicine name is required');
     }
     if (dto.quantity === undefined || isNaN(dto.quantity) || dto.quantity < 0) {
-      throw new Error('Valid medicine quantity is required');
+      throw new AppError(400, 'Valid medicine quantity is required');
     }
     if (dto.unitPrice === undefined || isNaN(dto.unitPrice) || dto.unitPrice <= 0) {
-      throw new Error('Valid unit price is required');
+      throw new AppError(400, 'Valid unit price is required');
     }
     if (!dto.expiryDate || isNaN(dto.expiryDate.getTime())) {
-      throw new Error('Valid expiry date is required');
+      throw new AppError(400, 'Valid expiry date is required');
     }
 
     return new Medicine({
@@ -61,10 +63,10 @@ export class Medicine {
 
   public reduceStock(amount: number): void {
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error('Amount must be a positive number');
+      throw new AppError(400, 'Amount must be a positive number');
     }
     if (amount > this._quantity) {
-      throw new Error('Insufficient stock');
+      throw new AppError(409, 'Insufficient stock');
     }
     this._quantity -= amount;
   }

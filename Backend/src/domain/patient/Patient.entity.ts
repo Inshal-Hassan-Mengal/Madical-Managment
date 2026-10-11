@@ -1,5 +1,6 @@
 import { PatientId } from './PatientId';
 import { Email } from './Email';
+import { AppError } from '../errors/AppError';
 
 export interface PatientProps {
   patientId: PatientId;
@@ -29,13 +30,13 @@ export class Patient {
 
   public static create(props: PatientProps): Patient {
     if (!props.firstName || props.firstName.trim().length === 0) {
-      throw new Error('First name is required');
+      throw new AppError(400, 'First name is required');
     }
     if (!props.lastName || props.lastName.trim().length === 0) {
-      throw new Error('Last name is required');
+      throw new AppError(400, 'Last name is required');
     }
     if (!props.phone || props.phone.trim().length === 0) {
-      throw new Error('Phone number is required');
+      throw new AppError(400, 'Phone number is required');
     }
     return new Patient(props);
   }

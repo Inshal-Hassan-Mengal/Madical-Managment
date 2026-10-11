@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AppointmentApplicationService } from '../../application/appointment/AppointmentApplicationService';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { UserModel } from '../../infrastructure/database/schemas/User.schema';
 import { PatientModel } from '../../infrastructure/database/schemas/Patient.schema';
 import { DoctorModel } from '../../infrastructure/database/schemas/Doctor.schema';
+import { AppError } from '../../domain/errors/AppError';
 
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentApplicationService) {}
@@ -23,23 +24,22 @@ export class AppointmentController {
     return doctor?.doctorId;
   };
 
-  public bookAppointment = async (req: Request, res: Response): Promise<void> => {
+  public bookAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { patientId, doctorId, appointmentDate, notes } = req.body;
+      let { patientId, doctorId, appointmentDate, notes } = req.body;
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
       if (user.role === 'patient') {
         const ownPatientId = await this.getPatientProfileId(user.email);
-        if (!ownPatientId || ownPatientId !== patientId) {
-          res.status(403).json({ success: false, message: 'You can only book appointments for yourself' });
-          return;
+        if (!ownPatientId || (patientId && ownPatientId !== patientId)) {
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
         }
-      } else if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        patientId = ownPatientId;
+        req.body.patientId = ownPatientId;
+      } else if (!['admin', 'doctor', 'nurse'].includes(user.role)) {
+        throw new AppError(403, 'Forbidden');
       }
 
       const appointmentId = await this.appointmentService.bookAppointment({
@@ -54,43 +54,35 @@ export class AppointmentController {
         message: 'Appointment booked successfully',
         appointmentId,
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to book appointment',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public cancelAppointment = async (req: Request, res: Response): Promise<void> => {
+  public cancelAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const appointmentId = String(req.params.appointmentId);
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
 
       const appointment = await this.appointmentService.getAppointmentById(appointmentId);
       if (!appointment) {
-        res.status(404).json({ success: false, message: 'Appointment not found' });
-        return;
+        throw new AppError(404, 'Appointment not found');
       }
       if (user.role === 'patient') {
         const ownPatientId = await this.getPatientProfileId(user.email);
         if (!ownPatientId || appointment.patientId !== ownPatientId) {
-          res.status(403).json({ success: false, message: 'You can only cancel your own appointments' });
-          return;
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
         }
       } else if (user.role === 'doctor') {
         const ownDoctorId = await this.getDoctorProfileId(user.email);
         if (!ownDoctorId || appointment.doctorId !== ownDoctorId) {
-          res.status(403).json({ success: false, message: 'You can only cancel your own appointments' });
-          return;
+          throw new AppError(403, 'You can only cancel your own appointments');
         }
       } else if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
 
       await this.appointmentService.cancelAppointment(appointmentId);
@@ -99,31 +91,27 @@ export class AppointmentController {
         success: true,
         message: 'Appointment cancelled successfully',
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to cancel appointment',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAppointmentsByPatient = async (req: Request, res: Response): Promise<void> => {
+  public getAppointmentsByPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const patientId = String(req.params.patientId);
+      let patientId = String(req.params.patientId);
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
       if (user.role === 'patient') {
         const ownPatientId = await this.getPatientProfileId(user.email);
-        if (!ownPatientId || ownPatientId !== patientId) {
-          res.status(403).json({ success: false, message: 'You can only view your own appointments' });
-          return;
+        if (!ownPatientId || (patientId && ownPatientId !== patientId)) {
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
         }
-      } else if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        patientId = ownPatientId;
+        req.params.patientId = ownPatientId;
+      } else if (!['admin', 'doctor', 'nurse'].includes(user.role)) {
+        throw new AppError(403, 'Forbidden');
       }
 
       const appointments = await this.appointmentService.getAppointmentsByPatient(patientId);
@@ -141,31 +129,25 @@ export class AppointmentController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch appointments',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAppointmentsByDoctor = async (req: Request, res: Response): Promise<void> => {
+  public getAppointmentsByDoctor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const doctorId = String(req.params.doctorId);
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
       if (user.role === 'doctor') {
         const ownDoctorId = await this.getDoctorProfileId(user.email);
         if (!ownDoctorId || ownDoctorId !== doctorId) {
-          res.status(403).json({ success: false, message: 'You can only view your own appointments' });
-          return;
+          throw new AppError(403, 'You can only view your own appointments');
         }
       } else if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
 
       const appointments = await this.appointmentService.getAppointmentsByDoctor(doctorId);
@@ -183,24 +165,19 @@ export class AppointmentController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch appointments',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAllAppointments = async (req: Request, res: Response): Promise<void> => {
+  public getAllAppointments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
       if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
 
       const appointments = await this.appointmentService.getAllAppointments();
@@ -218,47 +195,36 @@ export class AppointmentController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch appointments',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAppointment = async (req: Request, res: Response): Promise<void> => {
+  public getAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const appointmentId = String(req.params.appointmentId);
       const user = await this.getAuthenticatedUser(req);
       if (!user) {
-        res.status(401).json({ success: false, message: 'Unauthorized' });
-        return;
+        throw new AppError(401, 'Unauthorized');
       }
       const appointment = await this.appointmentService.getAppointmentById(appointmentId);
 
       if (!appointment) {
-        res.status(404).json({
-          success: false,
-          message: 'Appointment not found',
-        });
-        return;
+        throw new AppError(404, 'Appointment not found');
       }
 
       if (user.role === 'patient') {
         const ownPatientId = await this.getPatientProfileId(user.email);
         if (!ownPatientId || appointment.patientId !== ownPatientId) {
-          res.status(403).json({ success: false, message: 'You can only view your own appointments' });
-          return;
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
         }
       } else if (user.role === 'doctor') {
         const ownDoctorId = await this.getDoctorProfileId(user.email);
         if (!ownDoctorId || appointment.doctorId !== ownDoctorId) {
-          res.status(403).json({ success: false, message: 'You can only view your own appointments' });
-          return;
+          throw new AppError(403, 'You can only view your own appointments');
         }
       } else if (user.role !== 'admin') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
 
       res.status(200).json({
@@ -272,11 +238,8 @@ export class AppointmentController {
           notes: appointment.notes,
         },
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch appointment',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }

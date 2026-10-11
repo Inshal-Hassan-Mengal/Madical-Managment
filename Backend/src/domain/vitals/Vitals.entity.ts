@@ -1,4 +1,5 @@
 import { VitalsAnalysisResult } from './VitalsAnalysisResult';
+import { AppError } from '../errors/AppError';
 
 export interface VitalsProps {
   vitalsId: string;
@@ -46,10 +47,10 @@ export class Vitals {
 
   public static create(props: VitalsProps): Vitals {
     if (!props.vitalsId || props.vitalsId.trim().length === 0) {
-      throw new Error('VitalsId is required');
+      throw new AppError(400, 'VitalsId is required');
     }
     if (!props.patientId || props.patientId.trim().length === 0) {
-      throw new Error('PatientId is required');
+      throw new AppError(400, 'PatientId is required');
     }
     return new Vitals(props);
   }

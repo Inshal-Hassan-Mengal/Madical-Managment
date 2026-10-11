@@ -1,3 +1,5 @@
+import { AppError } from '../errors/AppError';
+
 export interface Medicine {
   name: string;
   dosage: string;
@@ -33,19 +35,19 @@ export class Prescription {
 
   public static create(props: PrescriptionProps): Prescription {
     if (!props.prescriptionId || props.prescriptionId.trim().length === 0) {
-      throw new Error('PrescriptionId is required');
+      throw new AppError(400, 'PrescriptionId is required');
     }
     if (!props.patientId || props.patientId.trim().length === 0) {
-      throw new Error('PatientId is required');
+      throw new AppError(400, 'PatientId is required');
     }
     if (!props.doctorId || props.doctorId.trim().length === 0) {
-      throw new Error('DoctorId is required');
+      throw new AppError(400, 'DoctorId is required');
     }
     if (!props.medicines || props.medicines.length === 0) {
-      throw new Error('At least one medicine must be prescribed');
+      throw new AppError(400, 'At least one medicine must be prescribed');
     }
     if (!props.diagnosis || props.diagnosis.trim().length === 0) {
-      throw new Error('Diagnosis is required');
+      throw new AppError(400, 'Diagnosis is required');
     }
 
     return new Prescription(props);

@@ -1,3 +1,5 @@
+import { AppError } from '../errors/AppError';
+
 export interface MedicalRecordProps {
   recordId: string;
   patientId: string;
@@ -29,16 +31,16 @@ export class MedicalRecord {
 
   public static create(props: MedicalRecordProps): MedicalRecord {
     if (!props.recordId || props.recordId.trim().length === 0) {
-      throw new Error('RecordId is required');
+      throw new AppError(400, 'RecordId is required');
     }
     if (!props.patientId || props.patientId.trim().length === 0) {
-      throw new Error('PatientId is required');
+      throw new AppError(400, 'PatientId is required');
     }
     if (!props.doctorId || props.doctorId.trim().length === 0) {
-      throw new Error('DoctorId is required');
+      throw new AppError(400, 'DoctorId is required');
     }
     if (!props.diagnosis || props.diagnosis.trim().length === 0) {
-      throw new Error('Diagnosis is required');
+      throw new AppError(400, 'Diagnosis is required');
     }
     return new MedicalRecord(props);
   }

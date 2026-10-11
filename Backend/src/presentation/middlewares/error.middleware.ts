@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { MulterError } from 'multer';
+import { env } from '../../infrastructure/config/env';
+import { AppError } from '../../domain/errors/AppError';
 
 export const errorMiddleware = (
   err: any,
@@ -33,12 +35,37 @@ export const errorMiddleware = (
     return;
   }
 
-  const statusCode: number = typeof err?.statusCode === 'number' ? err.statusCode : 500;
-  const isDev = process.env.NODE_ENV !== 'production';
+  const isDev = env.isDevelopment;
 
+  // Handle custom AppError (business and operational errors: not found, unauthorized, validation, conflict)
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      ...(isDev && err.stack ? { stack: err.stack } : {}),
+    });
+    return;
+  }
+
+  // Handle errors that have a numeric statusCode or status property
+  const statusCode: number =
+    typeof err?.statusCode === 'number'
+      ? err.statusCode
+      : typeof err?.status === 'number'
+      ? err.status
+      : 500;
+
+  // For 4xx client errors or in development, return the real message; in production for 500s return generic message
+  const is4xx = statusCode >= 400 && statusCode < 500;
+  const message: string =
+    is4xx || isDev
+      ? err?.message || 'Something went wrong'
+      : 'Internal Server Error';
+
+  // In production, never send stack traces to the client
   res.status(statusCode).json({
     success: false,
-    message: isDev ? (err?.message || 'Internal Server Error') : 'Internal Server Error',
+    message,
     ...(isDev && err?.stack ? { stack: err.stack } : {}),
   });
 };

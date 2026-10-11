@@ -3,6 +3,9 @@ import { PrescriptionRepository } from '../../infrastructure/database/repositori
 import { PrescriptionApplicationService } from '../../application/prescription/PrescriptionApplicationService';
 import { PrescriptionController } from '../controllers/Prescription.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { requireRole, requirePatientSelfOrRole } from '../middlewares/role.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { createPrescriptionSchema } from '../schemas';
 
 const prescriptionRouter = Router();
 
@@ -15,8 +18,18 @@ const prescriptionService = new PrescriptionApplicationService(prescriptionRepos
 const prescriptionController = new PrescriptionController(prescriptionService);
 
 // Route definitions
-prescriptionRouter.post('/', prescriptionController.createPrescription);
-prescriptionRouter.get('/patient/:patientId', prescriptionController.getPrescriptionsByPatient);
-prescriptionRouter.get('/doctor/:doctorId', prescriptionController.getPrescriptionsByDoctor);
+// Doctor & Admin only can create prescriptions
+prescriptionRouter.post('/', requireRole('admin', 'doctor'), validate(createPrescriptionSchema), prescriptionController.createPrescription);
+
+// Patients can only view their own prescriptions; staff has access
+prescriptionRouter.get(
+  '/patient/:patientId',
+  requireRole('admin', 'doctor', 'nurse', 'patient'),
+  requirePatientSelfOrRole('patientId', 'doctor', 'nurse'),
+  prescriptionController.getPrescriptionsByPatient
+);
+
+// Prescriptions issued by doctor: Doctor, Nurse, Admin
+prescriptionRouter.get('/doctor/:doctorId', requireRole('admin', 'doctor', 'nurse'), prescriptionController.getPrescriptionsByDoctor);
 
 export default prescriptionRouter;

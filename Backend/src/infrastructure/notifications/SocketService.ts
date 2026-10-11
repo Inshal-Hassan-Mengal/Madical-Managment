@@ -1,45 +1,41 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import {
+  initSocket,
+  getIO,
+  notificationService,
+  CriticalVitalsNotification,
+} from './socket';
 
-let io: SocketIOServer | null = null;
+export {
+  initSocket,
+  getIO,
+  notificationService,
+  CriticalVitalsNotification,
+};
 
-export const setup = (server: HttpServer): SocketIOServer => {
-  io = new SocketIOServer(server, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
-  });
-
-  io.on('connection', (socket) => {
-    socket.on('join', (userId: string) => {
-      if (userId) {
-        socket.join(userId);
-      }
-    });
-  });
-
-  return io;
+export const setup = (server: HttpServer, allowedOrigins?: string[]): SocketIOServer => {
+  return initSocket(server, allowedOrigins);
 };
 
 export const sendAlertToUser = (userId: string, message: string): void => {
-  if (!io) {
-    console.warn('Socket.io has not been initialized yet.');
-    return;
-  }
-  io.to(userId).emit('notification', message);
+  notificationService.sendAlertToUser(userId, message);
 };
 
 export class SocketService {
-  public static setup(server: HttpServer): SocketIOServer {
-    return setup(server);
+  public static setup(server: HttpServer, allowedOrigins?: string[]): SocketIOServer {
+    return initSocket(server, allowedOrigins);
   }
 
   public static sendAlertToUser(userId: string, message: string): void {
-    sendAlertToUser(userId, message);
+    notificationService.sendAlertToUser(userId, message);
+  }
+
+  public static emitCriticalVitals(payload: CriticalVitalsNotification): void {
+    notificationService.emitCriticalVitals(payload);
   }
 
   public static getIO(): SocketIOServer | null {
-    return io;
+    return getIO();
   }
 }

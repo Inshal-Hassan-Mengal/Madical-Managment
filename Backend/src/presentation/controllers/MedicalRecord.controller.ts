@@ -1,10 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { MedicalRecordApplicationService } from '../../application/medical-record/MedicalRecordApplicationService';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { AppError } from '../../domain/errors/AppError';
 
 export class MedicalRecordController {
   constructor(private readonly medicalRecordService: MedicalRecordApplicationService) {}
 
-  public createRecord = async (req: Request, res: Response): Promise<void> => {
+  public createRecord = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { patientId, doctorId, diagnosis, notes, allergies } = req.body;
 
@@ -21,17 +23,24 @@ export class MedicalRecordController {
         message: 'Medical record created successfully',
         recordId,
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to create medical record',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getRecordsByPatient = async (req: Request, res: Response): Promise<void> => {
+  public getRecordsByPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const patientId = String(req.params.patientId);
+      let patientId = String(req.params.patientId);
+      const user = (req as AuthenticatedRequest).user;
+      if (user?.role === 'patient') {
+        const patientLinkedId = user.linkedId;
+        if (!patientLinkedId || (patientId && patientId !== patientLinkedId)) {
+          throw new AppError(403, 'Forbidden: Patients can only access their own data');
+        }
+        patientId = patientLinkedId;
+        req.params.patientId = patientLinkedId;
+      }
+
       const records = await this.medicalRecordService.getRecordsByPatient(patientId);
 
       const data = records.map((r) => ({
@@ -48,11 +57,8 @@ export class MedicalRecordController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch medical records',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }

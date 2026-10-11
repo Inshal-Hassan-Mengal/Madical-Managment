@@ -1,12 +1,13 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { DoctorApplicationService } from '../../application/doctor/DoctorApplicationService';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { UserModel } from '../../infrastructure/database/schemas/User.schema';
+import { AppError } from '../../domain/errors/AppError';
 
 export class DoctorController {
   constructor(private readonly doctorService: DoctorApplicationService) {}
 
-  public createDoctor = async (req: Request, res: Response): Promise<void> => {
+  public createDoctor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { firstName, lastName, email, phone, specialization } = req.body;
 
@@ -28,29 +29,21 @@ export class DoctorController {
         message: 'Doctor created successfully',
         doctorId,
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to create doctor',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getMyDoctor = async (req: Request, res: Response): Promise<void> => {
+  public getMyDoctor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as AuthenticatedRequest).user?.userId;
       const user = userId ? await UserModel.findById(userId) : null;
 
       if (!user || user.role !== 'doctor') {
-        res.status(403).json({ success: false, message: 'Forbidden' });
-        return;
+        throw new AppError(403, 'Forbidden');
       }
       if (!user.linkedId) {
-        res.status(404).json({
-          success: false,
-          message: 'No doctor profile is linked to your account.',
-        });
-        return;
+        throw new AppError(404, 'No doctor profile is linked to your account.');
       }
 
       const doctor = await this.doctorService.getDoctor(user.linkedId);
@@ -66,16 +59,12 @@ export class DoctorController {
           specialization: doctor.specialization,
         },
       });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to retrieve doctor profile';
-      res.status(message === 'Doctor not found' ? 404 : 500).json({
-        success: false,
-        message,
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getDoctor = async (req: Request, res: Response): Promise<void> => {
+  public getDoctor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const doctorId = String(req.params.doctorId);
       const doctor = await this.doctorService.getDoctor(doctorId);
@@ -92,15 +81,12 @@ export class DoctorController {
           specialization: doctor.specialization,
         },
       });
-    } catch (error: any) {
-      res.status(404).json({
-        success: false,
-        message: error.message || 'Doctor not found',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  public getAllDoctors = async (req: Request, res: Response): Promise<void> => {
+  public getAllDoctors = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const doctors = await this.doctorService.getAllDoctors();
 
@@ -118,11 +104,8 @@ export class DoctorController {
         success: true,
         data,
       });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to retrieve doctors',
-      });
+    } catch (error) {
+      next(error);
     }
   };
 }
