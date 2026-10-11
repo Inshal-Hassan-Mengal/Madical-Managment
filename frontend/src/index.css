@@ -2,12 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS custom-property bridge ────────────────────────────────────
+   Exposes the Tailwind palette as custom properties so plain CSS
+   (pseudo-elements, ::before content, scrollbar styling, etc.) can
+   reference the same tokens.                                       */
+
+:root {
+  /* Primary */
+  --color-primary-50:  #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-300: #93C5FD;
+  --color-primary-400: #60A5FA;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary-900: #1E3A8A;
+  --color-primary:     #2563EB;
+
+  /* Backgrounds */
+  --color-bg:      #F1F5F9;
+  --color-surface: #FFFFFF;
+
+  /* Borders */
+  --color-border: rgb(30 41 59 / 0.10);
+
+  /* Text — navy family */
+  --color-text:           #0F172A;
+  --color-text-secondary: rgb(30 41 59 / 0.60);
+  --color-text-muted:     rgb(30 41 59 / 0.40);
+
+  /* Semantic */
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-danger:  #DC2626;
+  --color-info:    #0284C7;
+
+  /* Radius */
+  --radius-sm:  0.5rem;
+  --radius-md:  0.75rem;
+  --radius-lg:  1rem;
+  --radius-xl:  1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* Shadows */
+  --shadow-card:       0 1px 3px 0 rgb(15 23 42 / 0.04), 0 1px 2px -1px rgb(15 23 42 / 0.03);
+  --shadow-card-hover: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.04);
+}
+
+/* ── Base resets ──────────────────────────────────────────────────── */
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   background-color: theme('colors.background');
   color: theme('colors.textPrimary');
   margin: 0;
 }
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
 
 button, [role="button"] {
   transition: transform 0.15s cubic-bezier(0.19, 1, 0.22, 1), background-color 0.15s ease, opacity 0.15s ease;
@@ -17,16 +70,21 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-/* Give shared cards a quiet hover and preserve the existing GSAP reveal. */
+/* ── Card hover — quiet lift with shadow upgrade ─────────────────── */
+
 .gsap-card {
-  transition: scale 180ms ease-out, border-color 180ms ease-out;
+  transition: scale 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
+  box-shadow: var(--shadow-card);
 }
 
 .gsap-card:hover,
 .gsap-card:focus-within {
   border-color: theme('colors.primary.DEFAULT');
   scale: 1.01;
+  box-shadow: var(--shadow-card-hover);
 }
+
+/* ── Directional arrow icon ──────────────────────────────────────── */
 
 .card-arrow {
   width: 40px;
@@ -47,7 +105,9 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
   transform: translate(2px, -2px);
 }
 
+/* ── Page titles ─────────────────────────────────────────────────── */
 /* Use consistent titles and quiet labels across list and detail pages. */
+
 h1:not(.dashboard-title) {
   font-size: 28px !important;
   font-weight: 500 !important;
@@ -65,6 +125,8 @@ h1:not(.dashboard-title)::before {
   line-height: 1.4;
   text-transform: uppercase;
 }
+
+/* ── Tables ──────────────────────────────────────────────────────── */
 
 main table {
   border-collapse: collapse;
@@ -85,15 +147,19 @@ main table {
   white-space: nowrap;
 }
 
+/* ── Form elements ───────────────────────────────────────────────── */
+
 main input:not([type="checkbox"]):not([type="radio"]),
 main select {
   height: 40px;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
 }
 
 main textarea {
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
 }
+
+/* ── Reduced-motion ──────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .gsap-card,

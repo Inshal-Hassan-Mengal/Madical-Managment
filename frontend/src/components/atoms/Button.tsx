@@ -24,7 +24,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       disabled={disabled || isLoading}
-      className={`inline-flex min-h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${variantStyles[variant]} ${className}`}
+      className={`inline-flex min-h-10 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${variantStyles[variant]} ${className}`}
       {...props}
     >
       {isLoading && <Spinner size="sm" className="mr-2" />}
