@@ -5,7 +5,6 @@ A full-stack **Medical Management System** backend built with **Node.js, TypeScr
 > ⚠️ This project is under active development. Some modules may still be incomplete.
 
 ---
-
 ## 📖 Table of Contents
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
