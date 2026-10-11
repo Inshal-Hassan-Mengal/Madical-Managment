@@ -1,15 +1,12 @@
 import twilio from 'twilio';
+import { env } from '../config/env';
 
 export const sendSms = async (to: string, message: string): Promise<void> => {
-  const accountSid = process.env.TWILIO_SID || '';
-  const authToken = process.env.TWILIO_AUTH_TOKEN || '';
-  const fromNumber = process.env.TWILIO_PHONE || '';
-
-  const client = twilio(accountSid, authToken);
+  const client = twilio(env.TWILIO_SID, env.TWILIO_AUTH_TOKEN);
 
   await client.messages.create({
     body: message,
-    from: fromNumber,
+    from: env.TWILIO_PHONE,
     to,
   });
 };

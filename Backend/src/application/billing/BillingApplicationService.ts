@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { Invoice } from '../../domain/billing/Invoice.entity';
 import { IBillingRepository } from '../../domain/billing/IBillingRepository';
 import { CreateInvoiceDTO } from './CreateInvoiceDTO';
+import { AppError } from '../../domain/errors/AppError';
 
 export class BillingApplicationService {
   constructor(private readonly billingRepo: IBillingRepository) {}
@@ -22,7 +23,7 @@ export class BillingApplicationService {
   public async markInvoicePaid(invoiceId: string): Promise<void> {
     const invoice = await this.billingRepo.findById(invoiceId);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new AppError(404, 'Invoice not found');
     }
     invoice.markAsPaid();
     await this.billingRepo.update(invoice);

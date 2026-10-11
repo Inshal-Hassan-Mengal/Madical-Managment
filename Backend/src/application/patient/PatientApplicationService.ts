@@ -4,6 +4,7 @@ import { Patient } from '../../domain/patient/Patient.entity';
 import { PatientId } from '../../domain/patient/PatientId';
 import { Email } from '../../domain/patient/Email';
 import { CreatePatientDTO } from './CreatePatientDTO';
+import { AppError } from '../../domain/errors/AppError';
 
 export class PatientApplicationService {
   constructor(private readonly patientRepository: IPatientRepository) {}
@@ -14,7 +15,7 @@ export class PatientApplicationService {
     // Check if patient with this email already exists
     const existingPatient = await this.patientRepository.findByEmail(email);
     if (existingPatient) {
-      throw new Error('Patient with this email already exists');
+      throw new AppError(409, 'Patient with this email already exists');
     }
 
     // Generate unique ID and create domain entity
@@ -39,7 +40,7 @@ export class PatientApplicationService {
     const patient = await this.patientRepository.findById(id);
 
     if (!patient) {
-      throw new Error('Patient not found');
+      throw new AppError(404, 'Patient not found');
     }
 
     return patient;

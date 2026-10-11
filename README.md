@@ -174,32 +174,81 @@ npm start       # Run the compiled production build
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the `Backend` folder with the following keys:
+The backend requires several environment variables for database connections, caching, authentication, and notifications.
+
+### 1. Create Your `.env` File
+
+Copy the template from `.env.example` in the `Backend` directory:
+
+```bash
+# On Linux / macOS:
+cp .env.example .env
+
+# On Windows (Command Prompt):
+copy .env.example .env
+
+# On Windows (PowerShell):
+Copy-Item .env.example .env
+```
+
+### 2. Configure Required Variables
+
+Fill in the `.env` file with your environment-specific credentials:
 
 ```env
+# Server Configuration
 PORT=5000
+NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 
-# MongoDB
-MONGODB_URI=your_mongodb_atlas_connection_string
+# Database (MongoDB)
+# Local: mongodb://localhost:27017/medical_management
+# Atlas: mongodb+srv://<username>:<password>@<cluster-host>/medical_management?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/medical_management?retryWrites=true&w=majority
 
-# Redis
-REDIS_URL=your_redis_cloud_connection_string
+# Caching & Token Blacklist (Redis)
+# Local: redis://localhost:6379
+# Cloud: redis://:<password>@<redis-host>:<port>
+REDIS_URL=redis://:<password>@<redis-host>:<port>
 
-# JWT
-JWT_SECRET=your_jwt_secret_key
+# Authentication (JWT)
+# Generate a secure key: openssl rand -hex 32
+JWT_SECRET=your_jwt_secret_key_here
 
-# Email (Nodemailer)
+# Email Notifications (Nodemailer / SMTP)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+EMAIL_USER=your_email@example.com
+EMAIL_PASS=your_email_app_password
 
-# SMS (Twilio)
-TWILIO_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE=your_twilio_number
+# SMS Notifications (Twilio - Optional)
+TWILIO_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE=+1234567890
 ```
+
+### 3. Variable Descriptions & Setup Guidance
+
+| Variable | Required | Description | Example / Default |
+|---|:---:|---|---|
+| `PORT` | No | Port on which Express server listens | `5000` |
+| `NODE_ENV` | No | Runtime environment (`development`, `production`, `test`) | `development` |
+| `CLIENT_URL` | No | Frontend URL for CORS origin whitelist | `http://localhost:5173` |
+| `MONGODB_URI` | **Yes** | MongoDB connection URI (Atlas or local instance) | `mongodb://localhost:27017/medical_management` |
+| `REDIS_URL` | **Yes** | Redis connection URI for token blacklisting & session store | `redis://localhost:6379` |
+| `JWT_SECRET` | **Yes** | Secret string used to sign and verify authentication tokens | Strong random 256-bit secret string |
+| `EMAIL_HOST` | No | SMTP server hostname for email alerts / OTP | `smtp.gmail.com` |
+| `EMAIL_PORT` | No | SMTP server port (`587` for STARTTLS, `465` for SSL) | `587` |
+| `EMAIL_USER` | No | SMTP username / email address | `your_email@example.com` |
+| `EMAIL_PASS` | No | SMTP application-specific password | Google App Password |
+| `TWILIO_SID` | No | Twilio Account SID for SMS alerts | Twilio console SID |
+| `TWILIO_AUTH_TOKEN` | No | Twilio Auth Token for SMS alerts | Twilio auth token |
+| `TWILIO_PHONE` | No | Twilio sender phone number | `+1234567890` |
+
+> 🔒 **Security Notice:**
+> - **NEVER commit `.env` or real secrets to Git.**
+> - Keep `.env` listed in `.gitignore` at all times.
+> - If credentials (such as database passwords or API keys) are ever accidentally committed or exposed, revoke and rotate them immediately.
 
 ---
 

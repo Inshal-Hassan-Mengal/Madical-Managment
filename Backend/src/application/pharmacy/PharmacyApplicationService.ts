@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { Medicine } from '../../domain/pharmacy/Medicine.entity';
 import { IPharmacyRepository } from '../../domain/pharmacy/IPharmacyRepository';
 import { AddMedicineDTO } from './AddMedicineDTO';
+import { AppError } from '../../domain/errors/AppError';
 
 export class PharmacyApplicationService {
   constructor(private readonly pharmacyRepo: IPharmacyRepository) {}
@@ -30,7 +31,7 @@ export class PharmacyApplicationService {
   public async reduceStock(medicineId: string, amount: number): Promise<void> {
     const medicine = await this.pharmacyRepo.findById(medicineId);
     if (!medicine) {
-      throw new Error('Medicine not found');
+      throw new AppError(404, 'Medicine not found');
     }
     medicine.reduceStock(amount);
     await this.pharmacyRepo.update(medicine);

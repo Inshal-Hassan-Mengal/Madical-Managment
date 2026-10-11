@@ -1,17 +1,19 @@
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 
 export interface JwtPayload {
   userId: string;
   role: string;
+  linkedId?: string;
 }
 
 export class JwtService {
   private static getSecret(): string {
-    return process.env.JWT_SECRET || 'default_secret_key';
+    return env.JWT_SECRET;
   }
 
-  public static generateToken(userId: string, role: string): string {
-    const payload: JwtPayload = { userId, role };
+  public static generateToken(userId: string, role: string, linkedId?: string): string {
+    const payload: JwtPayload = { userId, role, ...(linkedId ? { linkedId } : {}) };
     return jwt.sign(payload, this.getSecret(), { expiresIn: '1d' });
   }
 

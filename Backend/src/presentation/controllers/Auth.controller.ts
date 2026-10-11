@@ -10,6 +10,7 @@ import { JwtService } from '../../infrastructure/auth/JwtService';
 import { TokenBlacklistService } from '../../infrastructure/auth/TokenBlacklistService';
 import { RegisterDTO, LoginDTO } from '../../application/auth';
 import { EmailService } from '../../infrastructure/notifications/EmailService';
+import { env } from '../../infrastructure/config/env';
 
 export class AuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
@@ -131,8 +132,7 @@ export class AuthController {
         return;
       }
 
-      // Generate JWT
-      const token = JwtService.generateToken(user._id.toString(), user.role);
+      // Resolve linked profile ID
       let linkedId = user.linkedId;
       if (!linkedId && user.role === 'patient') {
         const patient = await PatientModel.findOne({ email: user.email });
@@ -146,8 +146,11 @@ export class AuthController {
         await user.save();
       }
 
+      // Generate JWT with userId, role, and linkedId
+      const token = JwtService.generateToken(user._id.toString(), user.role, linkedId);
+
       // Set HTTP-only cookie
-      const isProduction = process.env.NODE_ENV === 'production';
+      const isProduction = env.isProduction;
       res.cookie('token', token, {
         httpOnly: true,
         secure: isProduction,
@@ -197,7 +200,7 @@ export class AuthController {
         }
       }
 
-      const isProduction = process.env.NODE_ENV === 'production';
+      const isProduction = env.isProduction;
       res.clearCookie('token', {
         httpOnly: true,
         secure: isProduction,

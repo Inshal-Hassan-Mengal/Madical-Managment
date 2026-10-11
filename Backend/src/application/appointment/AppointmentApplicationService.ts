@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { IAppointmentRepository } from '../../domain/appointment/IAppointmentRepository';
 import { Appointment } from '../../domain/appointment/Appointment.entity';
 import { CreateAppointmentDTO } from './CreateAppointmentDTO';
+import { AppError } from '../../domain/errors/AppError';
 
 export class AppointmentApplicationService {
   constructor(private readonly appointmentRepository: IAppointmentRepository) {}
@@ -25,7 +26,7 @@ export class AppointmentApplicationService {
   public async cancelAppointment(appointmentId: string): Promise<void> {
     const appointment = await this.appointmentRepository.findById(appointmentId);
     if (!appointment) {
-      throw new Error('Appointment not found');
+      throw new AppError(404, 'Appointment not found');
     }
 
     appointment.cancel();

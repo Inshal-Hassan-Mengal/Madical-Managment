@@ -1,12 +1,7 @@
 import Redis from 'ioredis';
-import dotenv from 'dotenv';
+import { env } from './env';
 
-// Ensure environment variables are loaded
-dotenv.config();
-
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-
-export const redisClient = new Redis(redisUrl, {
+export const redisClient = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: 3,
   retryStrategy(times) {
     // Retry with incremental backoff, capping at 3 seconds

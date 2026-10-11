@@ -1,4 +1,5 @@
 import { AppointmentStatus } from './AppointmentStatus';
+import { AppError } from '../errors/AppError';
 
 export interface AppointmentProps {
   appointmentId: string;
@@ -28,19 +29,19 @@ export class Appointment {
 
   public static create(props: AppointmentProps): Appointment {
     if (!props.appointmentId || props.appointmentId.trim().length === 0) {
-      throw new Error('AppointmentId is required');
+      throw new AppError(400, 'AppointmentId is required');
     }
     if (!props.patientId || props.patientId.trim().length === 0) {
-      throw new Error('PatientId is required');
+      throw new AppError(400, 'PatientId is required');
     }
     if (!props.doctorId || props.doctorId.trim().length === 0) {
-      throw new Error('DoctorId is required');
+      throw new AppError(400, 'DoctorId is required');
     }
     if (!props.appointmentDate || isNaN(props.appointmentDate.getTime())) {
-      throw new Error('A valid appointmentDate is required');
+      throw new AppError(400, 'A valid appointmentDate is required');
     }
     if (props.appointmentDate.getTime() < Date.now()) {
-      throw new Error('Appointment date cannot be in the past');
+      throw new AppError(400, 'Appointment date cannot be in the past');
     }
 
     return new Appointment({
@@ -51,14 +52,14 @@ export class Appointment {
 
   public cancel(): void {
     if (this._status === AppointmentStatus.COMPLETED) {
-      throw new Error('Cannot cancel an appointment that is already completed');
+      throw new AppError(409, 'Cannot cancel an appointment that is already completed');
     }
     this._status = AppointmentStatus.CANCELLED;
   }
 
   public complete(): void {
     if (this._status === AppointmentStatus.CANCELLED) {
-      throw new Error('Cannot complete a cancelled appointment');
+      throw new AppError(409, 'Cannot complete a cancelled appointment');
     }
     this._status = AppointmentStatus.COMPLETED;
   }

@@ -1,9 +1,11 @@
+import { AppError } from '../errors/AppError';
+
 export class DoctorId {
   private readonly value: string;
 
   constructor(id: string) {
     if (!id || id.trim().length === 0) {
-      throw new Error('DoctorId cannot be empty');
+      throw new AppError(400, 'DoctorId cannot be empty');
     }
     this.value = id.trim();
   }
