@@ -49,7 +49,7 @@ const alertBarWidths = [
 ];
 const menuItems = ['Solutions', 'Features', 'Product', 'Pricing'];
 
-const MedicalLogoMark: React.FC<{ className: string }> = ({ className }) => (
+export const MedicalLogoMark: React.FC<{ className: string }> = ({ className }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" aria-hidden="true">
     <path d="M39 4h22v9c0 13-7 22-16 31l-8 8-15-15 8-8c6-6 9-13 9-22V4Z" fill="#2563EB" />
     <path d="M96 39v22h-9c-13 0-22-7-31-16l-8-8 15-15 8 8c6 6 13 9 22 9h3Z" fill="#2563EB" />

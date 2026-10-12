@@ -4,9 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, HeartPulse, ScanFace, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, ScanFace, ShieldCheck } from 'lucide-react';
 import api from '../../shared/services/api';
 import { COOKIE_SESSION, useAuthStore } from '../../store/authStore';
+import { MedicalLogoMark } from './LandingPage';
 import { Card } from '../molecules/Card';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
@@ -81,8 +82,8 @@ export const LoginPage: React.FC = () => {
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 -left-24 h-80 w-80 rounded-full border border-white/10" />
 
           <Link to="/" className="relative inline-flex w-fit items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-              <HeartPulse className="h-6 w-6" aria-hidden="true" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-white/20">
+              <MedicalLogoMark className="h-8 w-8" />
             </span>
             <span className="text-lg font-bold tracking-tight">MedManage</span>
           </Link>
@@ -108,8 +109,8 @@ export const LoginPage: React.FC = () => {
         <section className="flex items-center justify-center p-5 sm:p-9 lg:p-10 xl:p-14">
           <div className="w-full max-w-md">
             <Link to="/" className="mb-8 inline-flex items-center gap-2.5 rounded-lg text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:hidden">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/20">
-                <HeartPulse className="h-5 w-5" aria-hidden="true" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-blue-100">
+                <MedicalLogoMark className="h-7 w-7" />
               </span>
               <span className="text-base font-bold tracking-tight">MedManage</span>
             </Link>
@@ -147,25 +148,32 @@ export const LoginPage: React.FC = () => {
                     onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
-                    className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-[transform,background-color,color] duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
-                    {showPassword
-                      ? <EyeOff className="h-4 w-4" aria-hidden="true" />
-                      : <Eye className="h-4 w-4" aria-hidden="true" />}
+                    <Eye className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`} aria-hidden="true" />
+                    <EyeOff className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`} aria-hidden="true" />
                   </button>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) => setRememberMe(event.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600/20"
-                    />
+                  <div className="inline-flex min-h-11 items-center gap-2.5 text-sm text-slate-600">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-label="Remember me"
+                      aria-checked={rememberMe}
+                      onClick={() => setRememberMe((checked) => !checked)}
+                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-95 ${
+                        rememberMe ? 'bg-blue-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
+                        rememberMe ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
                     Remember me
-                  </label>
-                  <Link to="/forgot-password" className="text-sm font-semibold text-blue-700 transition-colors hover:text-blue-800 hover:underline">
+                  </div>
+                  <Link to="/forgot-password" className="rounded-sm text-sm font-semibold text-blue-700 transition-colors duration-200 hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
                     Forgot password?
                   </Link>
                 </div>
@@ -173,7 +181,7 @@ export const LoginPage: React.FC = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="mt-1 min-h-12 w-full rounded-xl bg-blue-600 text-sm font-semibold shadow-lg shadow-blue-600/20 transition duration-200 hover:bg-blue-700"
+                  className="mt-1 min-h-12 w-full rounded-xl bg-blue-600 text-sm font-semibold shadow-lg shadow-blue-600/20 transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl active:translate-y-0 active:scale-[0.98]"
                   isLoading={isSubmitting}
                 >
                   Login
@@ -192,7 +200,7 @@ export const LoginPage: React.FC = () => {
               <Button
                 type="button"
                 variant="secondary"
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-slate-200 text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50"
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-slate-200 text-slate-700 transition-[transform,background-color,border-color] duration-200 hover:border-blue-200 hover:bg-blue-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
                 onClick={handleFaceLogin}
               >
                 <ScanFace className="h-4 w-4 text-blue-600" aria-hidden="true" />
@@ -201,7 +209,7 @@ export const LoginPage: React.FC = () => {
 
               <p className="mt-6 text-center text-sm text-slate-600">
                 New to MedManage?{' '}
-                <Link to="/register" className="font-semibold text-blue-700 transition-colors hover:text-blue-800 hover:underline">
+                <Link to="/register" className="rounded-sm font-semibold text-blue-700 transition-colors duration-200 hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
                   Sign up
                 </Link>
               </p>
