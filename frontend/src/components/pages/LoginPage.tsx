@@ -125,11 +125,14 @@ export const LoginPage: React.FC = () => {
         <section
           onPointerDown={() => setActiveSide('form')}
           onFocusCapture={() => setActiveSide('form')}
-          className={`relative z-10 flex items-center justify-center p-5 transition-colors duration-300 ease-in-out sm:p-9 lg:bg-transparent lg:p-10 xl:p-14 ${
-            activeSide === 'form' ? 'bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500' : 'bg-transparent'
-          }`}
+          className="relative z-10 flex items-center justify-center bg-transparent p-5 sm:p-9 lg:p-10 xl:p-14"
         >
-          <div className="w-full max-w-md">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 z-0 bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500 transition-[width] duration-300 ease-in-out lg:hidden"
+            style={{ width: activeSide === 'form' ? '100%' : '0%' }}
+          />
+          <div className="relative z-10 w-full max-w-md">
             <Link to="/" className="mb-8 inline-flex items-center gap-2.5 rounded-lg text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:hidden">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-blue-100">
                 <MedicalLogoMark className="h-7 w-7" />
