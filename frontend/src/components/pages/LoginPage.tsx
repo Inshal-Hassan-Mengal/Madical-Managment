@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,11 @@ export const LoginPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [activeLoginArea, setActiveLoginArea] = useState<'credentials' | 'preferences'>('credentials');
+  const [loginAreaHighlight, setLoginAreaHighlight] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const formRef = useRef<HTMLFormElement>(null);
+  const credentialsAreaRef = useRef<HTMLDivElement>(null);
+  const preferencesAreaRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -70,6 +75,44 @@ export const LoginPage: React.FC = () => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   useFadeUp(containerRef);
+
+  useLayoutEffect(() => {
+    const form = formRef.current;
+    const credentialsArea = credentialsAreaRef.current;
+    const preferencesArea = preferencesAreaRef.current;
+    if (!form || !credentialsArea || !preferencesArea) return;
+
+    const updateHighlightPosition = () => {
+      const formBounds = form.getBoundingClientRect();
+      const areaBounds = (activeLoginArea === 'credentials' ? credentialsArea : preferencesArea).getBoundingClientRect();
+      const nextPosition = {
+        top: areaBounds.top - formBounds.top - 8,
+        left: areaBounds.left - formBounds.left - 8,
+        width: areaBounds.width + 16,
+        height: areaBounds.height + 16,
+      };
+
+      setLoginAreaHighlight((current) =>
+        current.top === nextPosition.top &&
+        current.left === nextPosition.left &&
+        current.width === nextPosition.width &&
+        current.height === nextPosition.height
+          ? current
+          : nextPosition
+      );
+    };
+
+    updateHighlightPosition();
+    const observer = new ResizeObserver(updateHighlightPosition);
+    observer.observe(form);
+    observer.observe(credentialsArea);
+    observer.observe(preferencesArea);
+    window.addEventListener('resize', updateHighlightPosition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateHighlightPosition);
+    };
+  }, [activeLoginArea]);
 
   return (
     <main ref={containerRef} className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-100 px-4 py-10 sm:px-6">
@@ -122,40 +165,58 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <Card className="rounded-3xl border-slate-200/80 p-5 shadow-xl shadow-slate-900/[0.05] sm:p-7">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  label="Email address"
-                  type="email"
-                  placeholder="you@hospital.com"
-                  autoComplete="email"
-                  required
-                  error={errors.email?.message}
-                  {...register('email')}
+              <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="relative space-y-5">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute z-0 rounded-xl bg-blue-50/90 ring-1 ring-inset ring-blue-100/80 transition-[top,left,width,height] duration-300 ease-in-out"
+                  style={loginAreaHighlight}
                 />
 
-                <div className="relative">
+                <div
+                  ref={credentialsAreaRef}
+                  onFocusCapture={() => setActiveLoginArea('credentials')}
+                  onPointerDownCapture={() => setActiveLoginArea('credentials')}
+                  className="relative z-10 space-y-5"
+                >
                   <FormField
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
+                    label="Email address"
+                    type="email"
+                    placeholder="you@hospital.com"
+                    autoComplete="email"
                     required
-                    error={errors.password?.message}
-                    {...register('password')}
+                    error={errors.email?.message}
+                    {...register('email')}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    aria-pressed={showPassword}
-                    className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-[transform,background-color,color] duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                  >
-                    <Eye className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`} aria-hidden="true" />
-                    <EyeOff className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`} aria-hidden="true" />
-                  </button>
+
+                  <div className="relative">
+                    <FormField
+                      label="Password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      required
+                      error={errors.password?.message}
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
+                      className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-[transform,background-color,color] duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    >
+                      <Eye className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`} aria-hidden="true" />
+                      <EyeOff className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`} aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div
+                  ref={preferencesAreaRef}
+                  onFocusCapture={() => setActiveLoginArea('preferences')}
+                  onPointerDownCapture={() => setActiveLoginArea('preferences')}
+                  className="relative z-10 flex flex-wrap items-center justify-between gap-3"
+                >
                   <div className="inline-flex min-h-11 items-center gap-2.5 text-sm text-slate-600">
                     <button
                       type="button"
@@ -163,13 +224,14 @@ export const LoginPage: React.FC = () => {
                       aria-label="Remember me"
                       aria-checked={rememberMe}
                       onClick={() => setRememberMe((checked) => !checked)}
-                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-95 ${
+                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-95 ${
                         rememberMe ? 'bg-blue-600' : 'bg-slate-300'
                       }`}
                     >
-                      <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
-                        rememberMe ? 'translate-x-4' : 'translate-x-0'
-                      }`} />
+                      <span
+                        className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-[left] duration-300 ease-in-out"
+                        style={{ left: rememberMe ? '18px' : '2px' }}
+                      />
                     </button>
                     Remember me
                   </div>
