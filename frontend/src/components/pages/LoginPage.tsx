@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,11 +26,7 @@ export const LoginPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [activeLoginArea, setActiveLoginArea] = useState<'credentials' | 'preferences'>('credentials');
-  const [loginAreaHighlight, setLoginAreaHighlight] = useState({ top: 0, left: 0, width: 0, height: 0 });
-  const formRef = useRef<HTMLFormElement>(null);
-  const credentialsAreaRef = useRef<HTMLDivElement>(null);
-  const preferencesAreaRef = useRef<HTMLDivElement>(null);
+  const [activeSide, setActiveSide] = useState<'welcome' | 'form'>('welcome');
 
   const {
     register,
@@ -76,53 +72,30 @@ export const LoginPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   useFadeUp(containerRef);
 
-  useLayoutEffect(() => {
-    const form = formRef.current;
-    const credentialsArea = credentialsAreaRef.current;
-    const preferencesArea = preferencesAreaRef.current;
-    if (!form || !credentialsArea || !preferencesArea) return;
-
-    const updateHighlightPosition = () => {
-      const formBounds = form.getBoundingClientRect();
-      const areaBounds = (activeLoginArea === 'credentials' ? credentialsArea : preferencesArea).getBoundingClientRect();
-      const nextPosition = {
-        top: areaBounds.top - formBounds.top - 8,
-        left: areaBounds.left - formBounds.left - 8,
-        width: areaBounds.width + 16,
-        height: areaBounds.height + 16,
-      };
-
-      setLoginAreaHighlight((current) =>
-        current.top === nextPosition.top &&
-        current.left === nextPosition.left &&
-        current.width === nextPosition.width &&
-        current.height === nextPosition.height
-          ? current
-          : nextPosition
-      );
-    };
-
-    updateHighlightPosition();
-    const observer = new ResizeObserver(updateHighlightPosition);
-    observer.observe(form);
-    observer.observe(credentialsArea);
-    observer.observe(preferencesArea);
-    window.addEventListener('resize', updateHighlightPosition);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateHighlightPosition);
-    };
-  }, [activeLoginArea]);
-
   return (
     <main ref={containerRef} className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-100 px-4 py-10 sm:px-6">
       <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-28 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl" />
 
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 shadow-2xl shadow-blue-950/10 backdrop-blur-sm lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500 p-10 text-white lg:flex xl:p-12">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/10" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 -left-24 h-80 w-80 rounded-full border border-white/10" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 z-0 hidden rounded-[1.95rem] bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500 transition-[left,width] duration-300 ease-in-out lg:block"
+          style={{
+            left: activeSide === 'welcome' ? '0%' : '47.5%',
+            width: activeSide === 'welcome' ? '47.5%' : '52.5%',
+          }}
+        />
+
+        <section
+          onPointerDown={() => setActiveSide('welcome')}
+          onFocusCapture={() => setActiveSide('welcome')}
+          className={`relative z-10 hidden flex-col justify-between overflow-hidden bg-transparent p-10 transition-colors duration-300 ease-in-out lg:flex xl:p-12 ${
+            activeSide === 'welcome' ? 'text-white' : 'text-slate-700'
+          }`}
+        >
+          <div aria-hidden="true" className={`pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border ${activeSide === 'welcome' ? 'border-white/10' : 'border-blue-200/60'}`} />
+          <div aria-hidden="true" className={`pointer-events-none absolute -bottom-36 -left-24 h-80 w-80 rounded-full border ${activeSide === 'welcome' ? 'border-white/10' : 'border-blue-200/60'}`} />
 
           <Link to="/" className="relative inline-flex w-fit items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-white/20">
@@ -132,24 +105,30 @@ export const LoginPage: React.FC = () => {
           </Link>
 
           <div className="relative my-12">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">Medical Management</p>
-            <h1 className="dashboard-title max-w-md text-4xl font-bold leading-tight tracking-tight text-white xl:text-5xl">
+            <p className={`mb-4 text-xs font-semibold uppercase tracking-[0.2em] ${activeSide === 'welcome' ? 'text-blue-100' : 'text-blue-700'}`}>Medical Management</p>
+            <h1 className={`dashboard-title max-w-md text-4xl font-bold leading-tight tracking-tight xl:text-5xl ${activeSide === 'welcome' ? 'text-white' : 'text-slate-950'}`}>
               Welcome back to care that feels connected.
             </h1>
-            <p className="mt-5 max-w-md text-sm leading-7 text-blue-50/90">
+            <p className={`mt-5 max-w-md text-sm leading-7 ${activeSide === 'welcome' ? 'text-blue-50/90' : 'text-slate-600'}`}>
               Sign in to securely access your care team, patient records and clinic workspace.
             </p>
           </div>
 
-          <div className="relative flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+          <div className={`relative flex items-center gap-3 rounded-2xl border p-4 ${activeSide === 'welcome' ? 'border-white/15 bg-white/10' : 'border-blue-100 bg-blue-50'}`}>
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${activeSide === 'welcome' ? 'bg-white/15' : 'bg-blue-100 text-blue-700'}`}>
               <ShieldCheck className="h-5 w-5" aria-hidden="true" />
             </span>
-            <p className="text-xs leading-5 text-blue-50">Your healthcare workspace, protected and ready when you are.</p>
+            <p className={`text-xs leading-5 ${activeSide === 'welcome' ? 'text-blue-50' : 'text-slate-600'}`}>Your healthcare workspace, protected and ready when you are.</p>
           </div>
         </section>
 
-        <section className="flex items-center justify-center p-5 sm:p-9 lg:p-10 xl:p-14">
+        <section
+          onPointerDown={() => setActiveSide('form')}
+          onFocusCapture={() => setActiveSide('form')}
+          className={`relative z-10 flex items-center justify-center p-5 transition-colors duration-300 ease-in-out sm:p-9 lg:bg-transparent lg:p-10 xl:p-14 ${
+            activeSide === 'form' ? 'bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500' : 'bg-transparent'
+          }`}
+        >
           <div className="w-full max-w-md">
             <Link to="/" className="mb-8 inline-flex items-center gap-2.5 rounded-lg text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:hidden">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-blue-100">
@@ -159,64 +138,46 @@ export const LoginPage: React.FC = () => {
             </Link>
 
             <div className="mb-7">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Welcome back</p>
-              <h2 className="dashboard-title text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Sign in to your account</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Enter your details to continue to your clinical workspace.</p>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-[0.16em] ${activeSide === 'form' ? 'text-blue-100 lg:text-blue-700' : 'text-blue-700'}`}>Welcome back</p>
+              <h2 className={`dashboard-title text-3xl font-bold tracking-tight sm:text-4xl ${activeSide === 'form' ? 'text-white lg:text-slate-950' : 'text-slate-950'}`}>Sign in to your account</h2>
+              <p className={`mt-3 text-sm leading-6 ${activeSide === 'form' ? 'text-blue-50 lg:text-slate-600' : 'text-slate-600'}`}>Enter your details to continue to your clinical workspace.</p>
             </div>
 
             <Card className="rounded-3xl border-slate-200/80 p-5 shadow-xl shadow-slate-900/[0.05] sm:p-7">
-              <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="relative space-y-5">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute z-0 rounded-xl bg-blue-50/90 ring-1 ring-inset ring-blue-100/80 transition-[top,left,width,height] duration-300 ease-in-out"
-                  style={loginAreaHighlight}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <FormField
+                  label="Email address"
+                  type="email"
+                  placeholder="you@hospital.com"
+                  autoComplete="email"
+                  required
+                  error={errors.email?.message}
+                  {...register('email')}
                 />
 
-                <div
-                  ref={credentialsAreaRef}
-                  onFocusCapture={() => setActiveLoginArea('credentials')}
-                  onPointerDownCapture={() => setActiveLoginArea('credentials')}
-                  className="relative z-10 space-y-5"
-                >
+                <div className="relative">
                   <FormField
-                    label="Email address"
-                    type="email"
-                    placeholder="you@hospital.com"
-                    autoComplete="email"
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
                     required
-                    error={errors.email?.message}
-                    {...register('email')}
+                    error={errors.password?.message}
+                    {...register('password')}
                   />
-
-                  <div className="relative">
-                    <FormField
-                      label="Password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      autoComplete="current-password"
-                      required
-                      error={errors.password?.message}
-                      {...register('password')}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      aria-pressed={showPassword}
-                      className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-[transform,background-color,color] duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                    >
-                      <Eye className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`} aria-hidden="true" />
-                      <EyeOff className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`} aria-hidden="true" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    className="absolute right-3 top-[34px] inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-[transform,background-color,color] duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  >
+                    <Eye className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`} aria-hidden="true" />
+                    <EyeOff className={`absolute h-4 w-4 transition-[opacity,transform] duration-200 ${showPassword ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`} aria-hidden="true" />
+                  </button>
                 </div>
 
-                <div
-                  ref={preferencesAreaRef}
-                  onFocusCapture={() => setActiveLoginArea('preferences')}
-                  onPointerDownCapture={() => setActiveLoginArea('preferences')}
-                  className="relative z-10 flex flex-wrap items-center justify-between gap-3"
-                >
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="inline-flex min-h-11 items-center gap-2.5 text-sm text-slate-600">
                     <button
                       type="button"
