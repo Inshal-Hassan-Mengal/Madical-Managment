@@ -1,12 +1,11 @@
-import http from 'http';
-import path from 'path';
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './infrastructure/config/env';
 import { connectDatabase } from './infrastructure/config/database';
-import { connectRedis } from './infrastructure/config/redis';
-import { initSocket } from './infrastructure/notifications/socket';
+import { errorMiddleware } from './presentation/middlewares/error.middleware';
+import authRoutes from './presentation/routes/auth.routes';
 import patientRoutes from './presentation/routes/patient.routes';
 import doctorRoutes from './presentation/routes/doctor.routes';
 import appointmentRoutes from './presentation/routes/appointment.routes';
@@ -14,57 +13,18 @@ import vitalsRoutes from './presentation/routes/vitals.routes';
 import prescriptionRoutes from './presentation/routes/prescription.routes';
 import medicalRecordRoutes from './presentation/routes/medical-record.routes';
 import labReportRoutes from './presentation/routes/lab-report.routes';
-import authRoutes from './presentation/routes/auth.routes';
-import { errorMiddleware } from './presentation/middlewares/error.middleware';
 import billingRoutes from './presentation/routes/billing.routes';
 import dashboardRoutes from './presentation/routes/dashboard.routes';
 import pharmacyRoutes from './presentation/routes/pharmacy.routes';
 
 const app = express();
 const PORT = env.PORT;
-const allowedOrigins = new Set(
-  [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
-    env.CLIENT_URL,
-  ].filter((origin): origin is string => Boolean(origin))
-);
 
-// Create HTTP server wrapping Express app
-const httpServer = http.createServer(app);
-
-// Initialize Socket.io with HTTP server and identical CORS origins
-initSocket(httpServer, Array.from(allowedOrigins));
-
-// Middleware
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const isLocalDevelopmentOrigin =
-        env.isDevelopment
-        && typeof origin === 'string'
-        && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-
-      if (!origin || allowedOrigins.has(origin) || isLocalDevelopmentOrigin) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error('Origin is not allowed by CORS'));
-    },
-    credentials: true,
-  })
-);
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve uploaded files as static assets (must match the absolute path in multerConfig.ts)
-const uploadDir = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadDir));
-
-// Routes
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'OK' });
 });
 
@@ -80,17 +40,13 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 
-// Global error handler (must be registered last after all routes)
 app.use(errorMiddleware);
 
-// Connect to database and start server
-const startServer = async () => {
+const startServer = async (): Promise<void> => {
   await connectDatabase();
-  await connectRedis();
-
-  httpServer.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
 };
 
-startServer();
+void startServer();
