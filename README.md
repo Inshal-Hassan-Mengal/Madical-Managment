@@ -3,6 +3,17 @@
 A full-stack **Medical Management System** backend built with **Node.js, TypeScript, and Domain-Driven Design (DDD)**. It manages patients, doctors, appointments, prescriptions, billing, pharmacy inventory, and includes a **rule-based AI vitals checker** that flags abnormal patient readings (blood pressure, sugar, temperature, heart rate, pulse rate, RBC, and WBC counts).
 
 > ⚠️ This project is under active development. Some modules may still be incomplete.
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=mongodb+srv://mabbasmshahi2003_db_user:mabbas0008@medical-management.9rzf5w9.mongodb.net/project
+JWT_SECRET=medical_management_super_secure_jwt_secret_key_32chars_minimum
+REDIS_URL=redis://default:Z05Q9JR7PZV4Pb5KRLCIEKUn6b4sfdM8@kettle-ultraclean-sensory-22185.db.redis.io:17260
+
+
+
+
+
 
 
 

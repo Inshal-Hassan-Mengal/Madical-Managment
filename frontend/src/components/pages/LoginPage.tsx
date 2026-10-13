@@ -89,7 +89,7 @@ export const LoginPage: React.FC = () => {
 
         <section
           onPointerDown={() => setActiveSide('welcome')}
-          onFocusCapture={() => setActiveSide('welcome')}
+          onFocus={() => setActiveSide('welcome')}
           className={`relative z-10 hidden flex-col justify-between overflow-hidden bg-transparent p-10 transition-colors duration-300 ease-in-out lg:flex xl:p-12 ${
             activeSide === 'welcome' ? 'text-white' : 'text-slate-700'
           }`}
@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
           <div aria-hidden="true" className={`pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border ${activeSide === 'welcome' ? 'border-white/10' : 'border-blue-200/60'}`} />
           <div aria-hidden="true" className={`pointer-events-none absolute -bottom-36 -left-24 h-80 w-80 rounded-full border ${activeSide === 'welcome' ? 'border-white/10' : 'border-blue-200/60'}`} />
 
-          <Link to="/" className="relative inline-flex w-fit items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700">
+          <Link to="/" onFocus={() => setActiveSide('welcome')} className="relative inline-flex w-fit items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-white/20">
               <MedicalLogoMark className="h-8 w-8" />
             </span>
@@ -124,7 +124,7 @@ export const LoginPage: React.FC = () => {
 
         <section
           onPointerDown={() => setActiveSide('form')}
-          onFocusCapture={() => setActiveSide('form')}
+          onFocus={() => setActiveSide('form')}
           className="relative z-10 flex items-center justify-center bg-transparent p-5 sm:p-9 lg:p-10 xl:p-14"
         >
           <div
@@ -133,7 +133,7 @@ export const LoginPage: React.FC = () => {
             style={{ width: activeSide === 'form' ? '100%' : '0%' }}
           />
           <div className="relative z-10 w-full max-w-md">
-            <Link to="/" className="mb-8 inline-flex items-center gap-2.5 rounded-lg text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:hidden">
+            <Link to="/" onFocus={() => setActiveSide('form')} className="mb-8 inline-flex items-center gap-2.5 rounded-lg text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:hidden">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-blue-100">
                 <MedicalLogoMark className="h-7 w-7" />
               </span>
@@ -155,6 +155,7 @@ export const LoginPage: React.FC = () => {
                   autoComplete="email"
                   required
                   error={errors.email?.message}
+                  onFocus={() => setActiveSide('form')}
                   {...register('email')}
                 />
 
@@ -166,6 +167,7 @@ export const LoginPage: React.FC = () => {
                     autoComplete="current-password"
                     required
                     error={errors.password?.message}
+                    onFocus={() => setActiveSide('form')}
                     {...register('password')}
                   />
                   <button
