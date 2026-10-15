@@ -141,9 +141,9 @@ export const LoginPage: React.FC = () => {
             </Link>
 
             <div className="mb-7">
-              <p className={`mb-2 text-xs font-semibold uppercase tracking-[0.16em] ${activeSide === 'form' ? 'text-blue-100 lg:text-blue-700' : 'text-blue-700'}`}>Welcome back</p>
-              <h2 className={`dashboard-title text-3xl font-bold tracking-tight sm:text-4xl ${activeSide === 'form' ? 'text-white lg:text-slate-950' : 'text-slate-950'}`}>Sign in to your account</h2>
-              <p className={`mt-3 text-sm leading-6 ${activeSide === 'form' ? 'text-blue-50 lg:text-slate-600' : 'text-slate-600'}`}>Enter your details to continue to your clinical workspace.</p>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-[0.16em] ${activeSide === 'form' ? 'text-blue-100' : 'text-blue-700'}`}>Welcome back</p>
+              <h2 className={`dashboard-title text-3xl font-bold tracking-tight sm:text-4xl ${activeSide === 'form' ? 'text-white' : 'text-slate-950'}`}>Sign in to your account</h2>
+              <p className={`mt-3 text-sm leading-6 ${activeSide === 'form' ? 'text-blue-50' : 'text-slate-600'}`}>Enter your details to continue to your clinical workspace.</p>
             </div>
 
             <Card className="rounded-3xl border-slate-200/80 p-5 shadow-xl shadow-slate-900/[0.05] sm:p-7">
