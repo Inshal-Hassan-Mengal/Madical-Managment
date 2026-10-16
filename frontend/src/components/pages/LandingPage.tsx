@@ -75,6 +75,7 @@ export const LandingPage: React.FC = () => {
   const heroSectionRef = useRef<HTMLElement>(null);
   const heroVisualRef = useRef<HTMLDivElement>(null);
 
+
   const closeMenu = () => setIsMenuOpen(false);
 
   // Restrained elevation on scroll
@@ -429,7 +430,7 @@ export const LandingPage: React.FC = () => {
     if (prefersReducedMotion) return;
 
     const heroSection = heroSectionRef.current;
-    const heroCard   = heroVisualRef.current;
+    const heroCard = heroVisualRef.current;
 
     // ── 1. Hero card: 3D tilt on mouse (desktop) ──────────────────────────
     if (heroSection && heroCard) {
@@ -439,11 +440,11 @@ export const LandingPage: React.FC = () => {
 
       const handleMouseMove = (e: MouseEvent) => {
         const rect = heroSection.getBoundingClientRect();
-        const cx   = rect.left + rect.width  / 2;
-        const cy   = rect.top  + rect.height / 2;
-        const dx   = (e.clientX - cx) / (rect.width  / 2); // -1 … 1
-        const dy   = (e.clientY - cy) / (rect.height / 2); // -1 … 1
-        quickX( dx * MAX_TILT);
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2); // -1 … 1
+        const dy = (e.clientY - cy) / (rect.height / 2); // -1 … 1
+        quickX(dx * MAX_TILT);
         quickY(-dy * MAX_TILT);
       };
 
@@ -498,11 +499,11 @@ export const LandingPage: React.FC = () => {
         const qy = gsap.quickTo(card, 'rotateX', { duration: 0.35, ease: 'power2.out' });
 
         const onMove = (e: MouseEvent) => {
-          const r  = card.getBoundingClientRect();
-          const dx = (e.clientX - r.left  - r.width  / 2) / (r.width  / 2);
-          const dy = (e.clientY - r.top   - r.height / 2) / (r.height / 2);
+          const r = card.getBoundingClientRect();
+          const dx = (e.clientX - r.left - r.width / 2) / (r.width / 2);
+          const dy = (e.clientY - r.top - r.height / 2) / (r.height / 2);
           card.style.willChange = 'transform';
-          qx( dx * CARD_TILT);
+          qx(dx * CARD_TILT);
           qy(-dy * CARD_TILT);
           // Lift the icon inside the card
           const icon = card.querySelector<HTMLElement>('.card-icon-inner');
@@ -534,26 +535,23 @@ export const LandingPage: React.FC = () => {
 
       {/* ── SECTION 1: NAVBAR — Floating pill at top → full-width on scroll ── */}
       <div
-        className={`sticky z-50 w-full pointer-events-none transition-[top,padding] duration-300 ease-in-out ${
-          isScrolled
+        className={`sticky z-50 w-full pointer-events-none transition-[top,padding] duration-300 ease-in-out ${isScrolled
             ? 'top-0 pt-0 px-0'
             : 'top-4 sm:top-5 px-4 sm:px-6 lg:px-8'
-        }`}
+          }`}
       >
         <header
           ref={headerRef}
-          className={`pointer-events-auto mx-auto w-full transition-all duration-300 ease-in-out ${
-            isScrolled
+          className={`pointer-events-auto mx-auto w-full transition-all duration-300 ease-in-out ${isScrolled
               ? 'max-w-none rounded-none border-b border-white/10 bg-[#171B1A] shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md h-[66px] sm:h-[70px]'
               : 'max-w-[1240px] rounded-2xl border border-white/[0.12] bg-[#171B1A] shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-sm h-[76px] sm:h-[82px]'
-          }`}
+            }`}
         >
           <div
-            className={`flex h-full items-center justify-between transition-all duration-300 ease-in-out ${
-              isScrolled
+            className={`flex h-full items-center justify-between transition-all duration-300 ease-in-out ${isScrolled
                 ? 'mx-auto max-w-[1360px] px-6 sm:px-10 lg:px-12'
                 : 'px-5 sm:px-8'
-            }`}
+              }`}
           >
 
             {/* Left: Aivora Logo & Wordmark */}
@@ -693,19 +691,19 @@ export const LandingPage: React.FC = () => {
 
         <div className="relative mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-            
+
             {/* Left Column: Headline & CTAs */}
             <div className="gsap-hero-content max-w-[640px]">
               <div className="gsap-hero-badge mb-6 inline-flex items-center gap-2 rounded-full border border-[#52B441]/25 bg-[#C7FFBE]/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#171B1A]">
                 <span className="h-2 w-2 rounded-full bg-[#52B441]" />
                 Intelligent Healthcare Technology
               </div>
-              
+
               <h1 className="gsap-hero-title text-[clamp(2.4rem,5.2vw,4.1rem)] font-medium leading-[1.1] tracking-[-0.045em] text-[#171B1A]">
                 Smarter health insights. <br className="hidden sm:inline" />
                 <span className="text-[#3A9630]">Powered by AI.</span>
               </h1>
-              
+
               <p className="gsap-hero-desc mt-6 text-base leading-relaxed text-[#606967] sm:text-[18px] sm:leading-[1.65]">
                 Discover a more intelligent approach to health technology with Aivora. Turn innovative digital experiences into clearer, more accessible health insights.
               </p>
@@ -818,7 +816,7 @@ export const LandingPage: React.FC = () => {
       {/* ── SECTION 3: TRUST & VALUE INTRODUCTION ── */}
       <section id="about" className="border-t border-[#E8ECEB] bg-white py-20 text-[#171B1A] sm:py-24 lg:py-28">
         <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="section-header mx-auto max-w-[760px] text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#52B441]">
               Value Foundation
@@ -879,7 +877,7 @@ export const LandingPage: React.FC = () => {
       {/* ── SECTION 4: MAIN FEATURES ── */}
       <section id="solutions" className="border-t border-white/[0.08] bg-[#171B1A] py-20 text-white sm:py-24 lg:py-28">
         <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="section-header mx-auto max-w-[720px] text-center">
             <span className="inline-block rounded-full border border-[#C7FFBE]/30 bg-[#C7FFBE]/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#C7FFBE]">
               Platform Capabilities
@@ -893,7 +891,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div id="features-container" className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            
+
             {/* Feature 1 */}
             <div className="gsap-feature-card group rounded-2xl border border-white/10 bg-[#1E2322] p-7 transition-colors duration-200 hover:border-[#C7FFBE]/50 hover:bg-[#232928] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]" style={{ transformStyle: 'preserve-3d' }}>
               <div className="card-icon-inner flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] text-[#C7FFBE] transition-transform duration-200 group-hover:scale-110">
@@ -953,7 +951,7 @@ export const LandingPage: React.FC = () => {
       {/* ── SECTION 5: HOW IT WORKS ── */}
       <section id="how-it-works-section" className="border-t border-[#E8ECEB] bg-[#F8FAFA] py-20 text-[#171B1A] sm:py-24 lg:py-28">
         <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="section-header mx-auto max-w-[700px] text-center">
             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#52B441]">
               Simple Three-Step Progression
@@ -967,7 +965,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div id="steps-container" className="mt-16 grid gap-8 md:grid-cols-3">
-            
+
             {/* Step 1 */}
             <div className="gsap-step-item relative rounded-2xl border border-[#E8ECEB] bg-white p-8 shadow-sm">
               <span className="text-3xl font-extrabold tracking-tight text-[#C7FFBE] drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
@@ -1029,7 +1027,7 @@ export const LandingPage: React.FC = () => {
         <div aria-hidden="true" className="cockpit-ambient-glow pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[450px] w-[800px] rounded-full bg-[#C7FFBE]/[0.08] blur-[140px]" />
 
         <div className="relative mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="section-header mx-auto max-w-[760px] text-center">
             <span className="inline-block rounded-full border border-[#C7FFBE]/30 bg-[#C7FFBE]/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#C7FFBE]">
               Interactive Showcase
@@ -1044,7 +1042,7 @@ export const LandingPage: React.FC = () => {
 
           {/* Interactive Mockup Container */}
           <div className="cockpit-mockup mt-16 overflow-hidden rounded-[24px] border border-white/15 bg-[#1B201F] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.8)]">
-            
+
             {/* Top Mockup Header Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#141817] px-6 py-4">
               <div className="flex items-center gap-3">
@@ -1053,39 +1051,36 @@ export const LandingPage: React.FC = () => {
                 <span className="flex h-3 w-3 rounded-full bg-[#27C93F]" />
                 <span className="ml-3 text-xs font-medium text-white/50">aivora.app/workspace/clinical</span>
               </div>
-              
+
               {/* Tab Toggles */}
               <div className="flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
                 <button
                   type="button"
                   onClick={() => setActiveTab('vitals')}
-                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    activeTab === 'vitals'
+                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${activeTab === 'vitals'
                       ? 'bg-[#C7FFBE] text-[#171B1A]'
                       : 'text-white/70 hover:text-white'
-                  }`}
+                    }`}
                 >
                   Vitals Telemetry
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('records')}
-                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    activeTab === 'records'
+                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${activeTab === 'records'
                       ? 'bg-[#C7FFBE] text-[#171B1A]'
                       : 'text-white/70 hover:text-white'
-                  }`}
+                    }`}
                 >
                   Medical Records
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('appointments')}
-                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    activeTab === 'appointments'
+                  className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${activeTab === 'appointments'
                       ? 'bg-[#C7FFBE] text-[#171B1A]'
                       : 'text-white/70 hover:text-white'
-                  }`}
+                    }`}
                 >
                   Schedule
                 </button>
@@ -1196,7 +1191,7 @@ export const LandingPage: React.FC = () => {
       {/* ── SECTION 7: BENEFITS ── */}
       <section id="benefits-section" className="border-t border-[#E8ECEB] bg-white py-20 text-[#171B1A] sm:py-24 lg:py-28">
         <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="section-header mx-auto max-w-[720px] text-center">
             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#52B441]">
               Measurable Advantages
@@ -1207,7 +1202,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div id="benefits-container" className="mt-16 grid gap-8 md:grid-cols-2">
-            
+
             {/* Benefit 1 */}
             <div className="benefit-card rounded-2xl border border-[#E8ECEB] bg-[#F8FAFA] p-8 transition-shadow duration-200 hover:shadow-md">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#171B1A] text-[#C7FFBE]">
@@ -1301,9 +1296,9 @@ export const LandingPage: React.FC = () => {
       {/* ── SECTION 9: FOOTER ── */}
       <footer className="border-t border-white/10 bg-[#111413] py-14 text-white sm:py-16">
         <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
-          
+
           <div className="grid gap-10 md:grid-cols-4 lg:gap-12">
-            
+
             {/* Brand column */}
             <div className="footer-col md:col-span-2">
               <a href="#top" className="inline-flex items-center gap-3">
